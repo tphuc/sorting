@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+"""#!/usr/bin/env python3"""
 import argparse
 
 argparser = argparse.ArgumentParser()
@@ -121,5 +121,11 @@ def DeployAlgorithm(ARGS):
     return switcher[ARGS[0]](ARGS[2])
 
 if __name__ == '__main__':
+<<<<<<< HEAD
     ARGS = processArguments(args)
     DeployAlgorithm(ARGS)
+=======
+    (ALGORITHM, bDISPLAY, NUMLIST) = processArguments(args)[0]
+
+    
+>>>>>>> 65120adb4c3cd15c5f08bbece0f3c25eb6d82ac7
