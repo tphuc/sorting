@@ -1,43 +1,28 @@
 #!/usr/bin/env python3
 import argparse
-
-argparser = argparse.ArgumentParser()
-argparser.add_argument('--gui', action = 'store_true')
-argparser.add_argument('N', type = int, nargs = "*")
-argparser.add_argument('--algo', default = 'bubble')
-args = argparser.parse_args()
-args = vars(args)
+from visualizer import *
 CHOICES = ['bubble','quick','insert','merge']
 def print_list(data, pivot = 0):
     CRED = '\033[91m'
     CEND = '\033[0m'
     for i in data:
         if i == pivot:
-            print(CRED+str(i)+CEND, end=" ")
+            print(i, end=" ")
         else:
             print(i, end=" ")
     print("")
-def processArguments(args):
-    if not len(args['N']):
-        print("sage: sorting_deck.py [-h] [--algo ALGO] [--gui] N [N ...]")
-        print("sorting_deck.py: error: the following arguments are required: N")
-        return 0
-    algo = args['algo'] 
-    gui = False
-    if args['gui'] and len(args['N']) <= 15:
-        gui = True 
-    return (algo, gui, args['N'])
 
 def bubble(data):
-    """ perform bubble sort """
-    for i in range(len(data)-1):
-        for j in range(len(data)-i-1):
-            if data[j] > data[j+1]:
-                data[j], data[j+1] = data[j+1], data[j]
-            print_list(data)
+    temp_data = data.copy()
+    if not temp_data.sort() == data:
+        """ perform bubble sort """
+        for i in range(len(data)-1):
+            for j in range(len(data)-i-1):
+                if data[j] > data[j+1]:
+                    data[j], data[j+1] = data[j+1], data[j]
+                    print_list(data)
 
 def quick(data, left=0, right=None):
-    print_list(data)
     if right == None:
         right = len(data) - 1
     if left >= right:
@@ -46,7 +31,7 @@ def quick(data, left=0, right=None):
     middle = int((right+left)/2)
 
     pivot = data[middle]  # pick the Pivot
-    print("P:",pivot," L M R: ", left, middle, right)
+    print("P:",pivot)
     i = left
     j = right
 
@@ -56,21 +41,17 @@ def quick(data, left=0, right=None):
         while data[j] > pivot and j >= i:
             j-=1
         if i == j:
-            print_list(data, pivot)
-            print("break----------")
             break
         else:
-            print('swap:', data[i], data[j])
             data[i], data[j] = data[j], data[i]
-            print_list(data, pivot)
-    print(i,j)
+
     print_list(data, pivot)
-    print("")
     quick(data, left, i-1)
     quick(data, i+1, right)
 
 
 def merge(data):
+
     if len(data) >1: 
         mid = len(data)//2 #Finding the mid of the data
         L = data[:mid] # Dividing the data elements  
@@ -102,9 +83,11 @@ def merge(data):
             j+=1
             k+=1
         print_list(data)
+
+
 def insert(data):
-    data = data
-    for i in range(1, len(data)): 
+    for i in range(1, len(data)):
+        temp_data = data.copy() 
         current = data[i] 
         j = i-1 # set the start point to reverse check
         while j >= 0:
@@ -114,12 +97,81 @@ def insert(data):
             else:
                 break
         data[j+1] = current
-        print_list(data)
+        if temp_data != data:
+            print_list(data)
 
-def DeployAlgorithm(ARGS):
-    switcher = {'bubble':bubble,'quick':quick,'insert':insert,'merge':merge}
-    return switcher[ARGS[0]](ARGS[2])
+
+
+
+def DeployAlgorithm(algo, data):
+    if algo == 'quick':
+        quick(data)
+    elif algo == 'bubble':
+        bubble(data)
+    elif algo == 'insert':
+        insert(data)
+    elif algo == 'merge':
+        merge(data)
+
+def process_argument_parser():
+    """ return the dict for args """
+    argparser = argparse.ArgumentParser()
+    argparser.add_argument('--gui', action = 'store_true')
+    argparser.add_argument('N', type = int, nargs = "*")
+    argparser.add_argument('--algo', default = 'bubble')
+    args = argparser.parse_args()
+    args = vars(args)
+    if not len(args['N']):
+        print("sage: sorting_deck.py [-h] [--algo ALGO] [--gui] N [N ...]")
+        print("sorting_deck.py: error: the following arguments are required: N")
+        return 0
+    algo = args['algo'] 
+    gui = False
+    if args['gui']:
+        if len(args['N']) <= 15:
+            gui = True
+        else:
+            print("Input too large")
+            return 0
+    return (algo, gui, args['N'])
+
+
+    
 
 if __name__ == '__main__':
-    ARGS = processArguments(args)
-    DeployAlgorithm(ARGS)
+    args = process_argument_parser()
+    if not args == 0:
+        ALGO = args[0]
+        GUI = args[1]
+        data = args[2]
+        vis_data = data.copy()
+        DeployAlgorithm(ALGO,data)
+        start_width = 50 
+
+    
+        if GUI:
+            Nums = []
+            for i in range(len(vis_data)):
+                Nums.append(Num(data[i],(start_width+Num.gap*i,600),30))
+            Batch = Plot(Nums)
+            @window.event
+            def on_draw():
+                window.clear()
+                Batch.draw()
+                
+
+            def update(dt):
+                Batch.move()
+                pass
+
+            def start(dt):
+                Batch.visual_insertion()
+                pass
+
+            
+
+            pyglet.clock.schedule_interval(update, 0.02)
+            
+            pyglet.clock.schedule_once(start,0)
+            pyglet.app.run()
+    
