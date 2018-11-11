@@ -2,9 +2,11 @@ import pyglet
 import time
 WIDTH = 1000
 HEIGHT = 1000
-window = pyglet.window.Window(width=WIDTH, height=HEIGHT)
-delta_sec = 0.02
 
+delta_sec = 0.02
+t_quick = 4
+t_bubble = 2
+t_insert = 2
 
     
 
@@ -17,6 +19,23 @@ class Plot:
         self.stack_swap = []
         self.stack_active = []
         self.stack_sorted = []
+        self.stack_pivot = []
+
+    def check_finish(self):
+        if not len(self.stack_swap):
+            for num in self.nums:
+                num.sorted = True
+                num.set_marked()
+            return True
+        else:
+            return False
+    def visualize(self,arg):
+        if arg == 'quick':
+            self.visual_quick()
+        elif arg == 'insert':
+            self.visual_insertion()
+        else:
+            self.visual_bubble()
 
     def draw(self):
         for num in self.nums:
@@ -26,7 +45,8 @@ class Plot:
             num.move(num.velc)
 
     def visual_insertion(self):
-        for i in range(1, len(self.nums)): 
+        for i in range(1, len(self.nums)):
+            current_num = self.nums[i] 
             current = self.nums[i].val 
             j = i-1 # set the start point to reverse check
             while j >= 0:
@@ -35,14 +55,23 @@ class Plot:
                     #print(j,':',self.nums[j].val,j+1,':',self.nums[j+1].val)
                     self.stack_swap.append(self.nums[j])
                     self.stack_swap.append(self.nums[j+1])
+                    self.stack_sorted.append(current_num)
+
                     j -= 1
                 else:
                     break
-        pyglet.clock.schedule_interval(self.tick_insert, 2)
+        pyglet.clock.schedule_interval(self.tick_insert, t_insert)
     
     def tick_insert(self,dt):
-        pyglet.clock.schedule_once(self.swap, 0.5)
+        if len(self.stack_sorted) > 0:
+            self.stack_sorted[0].sorted = True
+            self.stack_sorted[0].set_marked()
 
+        pyglet.clock.schedule_once(self.swap, 0.5)
+        self.stack_sorted = self.stack_sorted[1:]
+        """ finished """
+        if self.check_finish():
+            pyglet.clock.unschedule(self.tick_insert)
     def visual_bubble(self):
         """ perform bubble sort with visualization """
         for i in range(len(self.nums)-1):
@@ -59,13 +88,15 @@ class Plot:
                     self.stack_swap.append(self.nums[j+1])
             self.stack_sorted.append(1)
         """ ticking bubble sort """
-        pyglet.clock.schedule_interval(self.tick_bubble, 2)
+        pyglet.clock.schedule_interval(self.tick_bubble, t_bubble)
+        
              
     def swap(self,dt):
         if len(self.stack_swap) > 1:
             Num.swap(self.stack_swap[0], self.stack_swap[1])
             """ pop 2 first elements from swap stack """
             self.stack_swap = self.stack_swap[2:]
+ 
 
     def tick_bubble(self, dt):
         if len(self.stack_active) > 1:
@@ -90,6 +121,56 @@ class Plot:
             """ pop the element from its stack """ 
             self.stack_sorted = self.stack_sorted[1:]
             self.stack_active = self.stack_active[2:]
+        """ finished """
+        if self.check_finish():
+            pyglet.clock.unschedule(self.tick_bubble)
+    def visual_quick(self, left=0, right=None):
+        if right == None:
+            right = len(self.nums) - 1
+        if left >= right:
+            if right == len(self.nums)-1:
+                pyglet.clock.schedule_interval(self.tick_quick, t_quick)
+            return
+        """------------------ """
+        middle = int((right+left)/2)
+        pivot_num = self.nums[middle]
+        pivot = self.nums[middle].val  # pick the Pivot
+        print("P:",pivot)
+        i = left
+        j = right
+
+        while True:
+            while self.nums[i].val < pivot and i <= j:
+                i+=1
+            while self.nums[j].val > pivot and j >= i:
+                j-=1
+            if i == j:
+                break
+            else:
+                self.nums[i], self.nums[j] = self.nums[j], self.nums[i]
+                self.stack_swap.append(self.nums[i])
+                self.stack_swap.append(self.nums[j])
+                self.stack_pivot.append(pivot_num)
+                self.stack_pivot.append(pivot_num)
+                
+        self.visual_quick(left, i-1)
+        self.visual_quick(i+1, right)
+
+
+    def tick_quick(self, dt):
+        if len(self.stack_pivot) > 0:
+            """ set active 2 current elements to compare """
+            self.stack_pivot[0].set_marked()
+            self.stack_pivot[1].set_marked()
+            """ set deactive other elements """
+            for i in range(2,len(self.stack_pivot)):
+                if self.stack_pivot[i] != self.stack_pivot[0] and self.stack_pivot[i] != self.stack_pivot[1]:
+                    self.stack_pivot[i].set_active(False)
+        pyglet.clock.schedule_once(self.swap, 0.5)
+        self.stack_pivot = self.stack_pivot[2:]
+        """ finished """
+        if self.check_finish():
+            pyglet.clock.unschedule(self.tick_quick)
 
 class Color:
     red = (255,0,0,255)
@@ -108,8 +189,8 @@ class Num(pyglet.window.Window):
     def swap(obj1, obj2):
         obj1.move_to(obj2.loc)
         obj2.move_to(obj1.loc)
-        obj1.set_active()
-        obj2.set_active()
+        #obj1.set_active()
+        #obj2.set_active()
         #obj1.val , obj2.val = obj2.val, obj1.val
 
         
@@ -148,8 +229,8 @@ class Num(pyglet.window.Window):
 
     def move_to(self,location, avoid=False):
         self.update_targetlocation(location)
-        deltaX = location[0] - self.pylabel.x
-        deltaY = location[1] - self.pylabel.y
+        #deltaX = location[0] - self.pylabel.x
+        #deltaY = location[1] - self.pylabel.y
         """
         if avoid:
             if deltaX > 0:
@@ -213,6 +294,7 @@ class Num(pyglet.window.Window):
             self.change_color(Color.white)
     def set_marked(self):
         self.change_color(Color.orange)
+
     def update_value(self):
         self.pylabel.text = str(self.val)
 

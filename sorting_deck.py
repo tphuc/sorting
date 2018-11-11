@@ -146,26 +146,31 @@ if __name__ == '__main__':
         data = args[2]
         vis_data = data.copy()
         DeployAlgorithm(ALGO,data)
-        start_width = 50 
+        start_width = get_start_location(len(data))[0] 
 
+        Algo_label = pyglet.text.Label(str(ALGO)+' sort',
+                          x=450, y=800, font_size=36, bold = True,
+                          anchor_x='center', anchor_y='center',
+                          )
     
         if GUI:
+            window = pyglet.window.Window(width=WIDTH, height=HEIGHT)
             Nums = []
             for i in range(len(vis_data)):
-                Nums.append(Num(data[i],(start_width+Num.gap*i,600),30))
+                Nums.append(Num(vis_data[i],(start_width+Num.gap*i,HEIGHT/2+100),30))
             Batch = Plot(Nums)
             @window.event
             def on_draw():
                 window.clear()
                 Batch.draw()
-                
+                Algo_label.draw()
 
             def update(dt):
                 Batch.move()
                 pass
 
             def start(dt):
-                Batch.visual_insertion()
+                Batch.visualize(ALGO)
                 pass
 
             
