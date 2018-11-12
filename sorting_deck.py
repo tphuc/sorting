@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import argparse
-from visualizer import *
+
 CHOICES = ['bubble','quick','insert','merge']
 def print_list(data, pivot = 0):
     CRED = '\033[91m'
@@ -146,14 +146,15 @@ if __name__ == '__main__':
         data = args[2]
         vis_data = data.copy()
         DeployAlgorithm(ALGO,data)
-        start_width = get_start_location(len(data))[0] 
+        
+        if GUI:
+            from visualizer import *
+            start_width = get_start_location(len(data))[0] 
 
-        Algo_label = pyglet.text.Label(str(ALGO)+' sort',
+            Algo_label = pyglet.text.Label(str(ALGO)+' sort',
                           x=450, y=800, font_size=36, bold = True,
                           anchor_x='center', anchor_y='center',
                           )
-    
-        if GUI:
             window = pyglet.window.Window(width=WIDTH, height=HEIGHT)
             Nums = []
             for i in range(len(vis_data)):

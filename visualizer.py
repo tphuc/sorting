@@ -8,9 +8,6 @@ t_quick = 4
 t_bubble = 2
 t_insert = 2
 
-    
-
-
 
 class Plot:
     """ List of Nums on screen """
@@ -29,6 +26,7 @@ class Plot:
             return True
         else:
             return False
+
     def visualize(self,arg):
         if arg == 'quick':
             self.visual_quick()
@@ -40,10 +38,19 @@ class Plot:
     def draw(self):
         for num in self.nums:
             num.draw()
+
     def move(self):
         for num in self.nums:
             num.move(num.velc)
 
+             
+    def swap(self,dt):
+        if len(self.stack_swap) > 1:
+            Num.swap(self.stack_swap[0], self.stack_swap[1])
+            """ pop 2 first elements from swap stack """
+            self.stack_swap = self.stack_swap[2:]
+
+    #############################
     def visual_insertion(self):
         for i in range(1, len(self.nums)):
             current_num = self.nums[i] 
@@ -56,7 +63,6 @@ class Plot:
                     self.stack_swap.append(self.nums[j])
                     self.stack_swap.append(self.nums[j+1])
                     self.stack_sorted.append(current_num)
-
                     j -= 1
                 else:
                     break
@@ -72,6 +78,8 @@ class Plot:
         """ finished """
         if self.check_finish():
             pyglet.clock.unschedule(self.tick_insert)
+
+    ###################################
     def visual_bubble(self):
         """ perform bubble sort with visualization """
         for i in range(len(self.nums)-1):
@@ -89,14 +97,6 @@ class Plot:
             self.stack_sorted.append(1)
         """ ticking bubble sort """
         pyglet.clock.schedule_interval(self.tick_bubble, t_bubble)
-        
-             
-    def swap(self,dt):
-        if len(self.stack_swap) > 1:
-            Num.swap(self.stack_swap[0], self.stack_swap[1])
-            """ pop 2 first elements from swap stack """
-            self.stack_swap = self.stack_swap[2:]
- 
 
     def tick_bubble(self, dt):
         if len(self.stack_active) > 1:
@@ -114,6 +114,7 @@ class Plot:
             """ marked the sorted every loop """
             if self.stack_sorted[0]:
                 self.stack_active[0].sorted = True
+
                 if len(self.stack_swap) == 0:
                     for num in self.stack_active:
                         num.sorted = True
@@ -124,6 +125,7 @@ class Plot:
         """ finished """
         if self.check_finish():
             pyglet.clock.unschedule(self.tick_bubble)
+    #############################################
     def visual_quick(self, left=0, right=None):
         if right == None:
             right = len(self.nums) - 1
@@ -152,10 +154,8 @@ class Plot:
                 self.stack_swap.append(self.nums[j])
                 self.stack_pivot.append(pivot_num)
                 self.stack_pivot.append(pivot_num)
-                
         self.visual_quick(left, i-1)
         self.visual_quick(i+1, right)
-
 
     def tick_quick(self, dt):
         if len(self.stack_pivot) > 0:
@@ -171,7 +171,7 @@ class Plot:
         """ finished """
         if self.check_finish():
             pyglet.clock.unschedule(self.tick_quick)
-
+    ############################################################
 class Color:
     red = (255,0,0,255)
     green = (0,255,0,255)
@@ -183,9 +183,9 @@ class Color:
     active = (0,255,0,255)
     sort = (255,255,0,255)
 
-class Num(pyglet.window.Window):
+class Num:
     gap = 50
-    speed = 2
+    speed = 5
     def swap(obj1, obj2):
         obj1.move_to(obj2.loc)
         obj2.move_to(obj1.loc)
@@ -193,14 +193,12 @@ class Num(pyglet.window.Window):
         #obj2.set_active()
         #obj1.val , obj2.val = obj2.val, obj1.val
 
-        
-    
-    def __init__(self, val, loc, size, color=(255,255,255,255),window=None):
+
+    def __init__(self, val, loc, size, color=(255,255,255,255)):
         self.val = val
         self.loc = loc
         self.color = color
         self.size = size
-        self.document = pyglet.text.decode_text(str(self.val))
         self.pylabel = pyglet.text.Label(str(self.val),
                           x=self.loc[0], y=self.loc[1],
                           anchor_x='center', anchor_y='center',
@@ -217,17 +215,15 @@ class Num(pyglet.window.Window):
         self.pylabel.x += velc[0]
         self.pylabel.y += velc[1]
 
-    def stop(self,dt):
+    def stop(self):
         self.velc = (0,0)
         self.update_location()
-        if not self.sorted:
-            self.set_active(False)
-        else:
+        if self.sorted:
             self.set_marked()
-        #self.update_value()
 
 
-    def move_to(self,location, avoid=False):
+
+    def move_to(self,location):
         self.update_targetlocation(location)
         #deltaX = location[0] - self.pylabel.x
         #deltaY = location[1] - self.pylabel.y
@@ -245,10 +241,10 @@ class Num(pyglet.window.Window):
                 pyglet.clock.schedule_once(self.stop,2.5)
         """
         if location[0] > self.pylabel.x:
-            pyglet.clock.schedule_once(self.move_right,0)
+            self.move_right()
         else:
-            pyglet.clock.schedule_once(self.move_left,0)
-        pyglet.clock.schedule_interval(self.check_has_arrived, 0.02)
+            self.move_left()
+        pyglet.clock.schedule_interval(self.check_has_arrived, 0.01)
 
     def update_targetlocation(self, location):
         self.target_loc = location
@@ -256,21 +252,21 @@ class Num(pyglet.window.Window):
     def update_location(self):
         self.loc = (self.pylabel.x, self.pylabel.y)
 
-    def move_right(self,dt):
+    def move_right(self):
         self.velc = (Num.speed,0)
     
-    def move_down(self,dt):
+    def move_down(self):
         self.velc = (0,Num.speed*-1)
 
-    def move_left(self,dt):
+    def move_left(self):
         self.velc = (Num.speed*-1,0)
 
-    def move_up(self,dt):
+    def move_up(self):
         self.velc = (0,Num.speed)
 
     def check_has_arrived(self,dt):
         if nearly_equal(self.pylabel.x, self.target_loc[0]) and nearly_equal(self.pylabel.y, self.target_loc[1]):
-            self.stop(dt)
+            self.stop()
             pyglet.clock.unschedule(self.check_has_arrived)
     ###########################################################################
     ###########################################################################
@@ -292,6 +288,7 @@ class Num(pyglet.window.Window):
             self.change_color(Color.green)
         else:
             self.change_color(Color.white)
+
     def set_marked(self):
         self.change_color(Color.orange)
 
@@ -309,7 +306,7 @@ def nearly_equal(float1, float2, error_tol=1):
 
 
 def unit_move(d,time):
-    print(d/time*delta_sec)
+
     return d/time*delta_sec
 
 
